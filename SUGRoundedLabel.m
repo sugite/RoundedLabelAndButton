@@ -19,6 +19,8 @@
 @property (nonatomic, strong) UIColor *layerShadowColor;
 @property (nonatomic, assign) CGFloat layerShadowRadius;
 
+@property (nonatomic, strong) CALayer *shadowLayer;
+
 @end
 
 @implementation SUGRoundedLabel
@@ -32,7 +34,7 @@
     }
     
     SUGRoundedLabel *label = [[self alloc] initWithFrame:frame];
-    label.backgroundColor = [UIColor clearColor];
+    [label clearBackgroundColor];
     label.font = font;
     label.textAlignment = NSTextAlignmentCenter;
     if (textColor) {
@@ -40,6 +42,23 @@
     }
     
     return label;
+}
+
++ (instancetype)labelWithFrame:(CGRect)frame textColor:(UIColor *)textColor fontSize:(CGFloat)fontSize cornerRadius:(CGFloat)radius
+{
+    SUGRoundedLabel *label = [SUGRoundedLabel labelWithFrame:frame textColor:textColor fontSize:fontSize];
+    [label setAllCornersRadius:radius];
+    return label;
+}
+
+- (void)setAllCornersRadius:(CGFloat)radius
+{
+    [self setRoundCorners:UIRectCornerAllCorners radius:radius];
+}
+
+- (void)setRoundCorners:(UIRectCorner)corners radius:(CGFloat)radius
+{
+    [self setRoundCorners:corners radius:radius borderColor:nil borderWidth:0];
 }
 
 - (void)setRoundCorners:(UIRectCorner)corners radius:(CGFloat)radius borderColor:(UIColor *)borderColor borderWidth:(CGFloat)borderWidth
@@ -55,6 +74,19 @@
     self.layerShadowOffset = shadowOffset;
     self.layerShadowColor = shadowColor;
     self.layerShadowRadius = shadowRadius;
+}
+
+- (void)setBackgroundColor:(UIColor *)backgroundColor
+{
+    // UITableViewCell makes label's background clear when highlighted
+    if (CGColorGetAlpha(backgroundColor.CGColor) != 0) {
+        [super setBackgroundColor:backgroundColor];
+    }
+}
+
+- (void)clearBackgroundColor
+{
+    [super setBackgroundColor:UIColor.clearColor];
 }
 
 - (CGSize)intrinsicContentSize
@@ -96,16 +128,31 @@
     }
     
     if (self.layerShadowColor) {
-        CALayer *shadowLayer = [CALayer layer];
-        shadowLayer.shadowOpacity = 1;
-        shadowLayer.shadowOffset = self.layerShadowOffset;
-        shadowLayer.shadowRadius = self.layerShadowRadius;
-        shadowLayer.shadowColor = self.layerShadowColor.CGColor;
-        shadowLayer.shadowPath = [UIBezierPath bezierPathWithRect:self.frame].CGPath;
+        [self.shadowLayer removeFromSuperlayer];
+        self.shadowLayer.shadowOpacity = 1;
+        self.shadowLayer.shadowOffset = self.layerShadowOffset;
+        self.shadowLayer.shadowRadius = self.layerShadowRadius;
+        self.shadowLayer.shadowColor = self.layerShadowColor.CGColor;
+        self.shadowLayer.shadowPath = [UIBezierPath bezierPathWithRect:self.frame].CGPath;
         
-        [self.layer.superlayer insertSublayer:shadowLayer below:self.layer];
+        [self.layer.superlayer insertSublayer:self.shadowLayer below:self.layer];
     }
 }
 
+- (CALayer *)shadowLayer
+{
+    if (!_shadowLayer) {
+        _shadowLayer = [CALayer layer];
+    }
+    return _shadowLayer;
+}
+
+- (void)dealloc
+{
+    [self.shadowLayer removeFromSuperlayer];
+}
+
 @end
+
+
 
